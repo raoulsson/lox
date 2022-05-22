@@ -1,0 +1,1 @@
+Implementing code from Nystroms Book, you wanna look there: https://craftinginterpreters.com/ and https://github.com/munificent/craftinginterpreters
