@@ -14,6 +14,14 @@ public class Parser {
         this.tokens = tokens;
     }
 
+    Expr parse() {
+        try {
+            return expression();
+        } catch (ParseError error) {
+            return null;
+        }
+    }
+
     private Expr expression() {
         return equality();
     }
@@ -132,8 +140,7 @@ public class Parser {
         // https://stackoverflow.com/questions/70999675/how-does-this-recursive-descent-parser-match-specific-operators
         // If we got right down to primary() and still nothing matches, then the token we have cannot possibly be the
         // start of an expression. In this case, throw an error.
-        //throw error(peek_this(), "Expected expression.");
-        throw new RuntimeException("Expected expression.");
+        throw error(peek(), "Expected expression.");
     }
 
     private Token consume(TokenType type, String message) {
@@ -146,5 +153,28 @@ public class Parser {
     private ParseError error(Token token, String message) {
         Lox.error(token, message);
         return new ParseError();
+    }
+
+    private void synchronize() {
+        advance();
+
+        while (!isAtEnd()) {
+            if (previous().type == SEMICOLON) {
+                return;
+            }
+
+            switch (peek().type) {
+                case CLASS:
+                case FUN:
+                case VAR:
+                case FOR:
+                case IF:
+                case WHILE:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+            advance();
+        }
     }
 }
