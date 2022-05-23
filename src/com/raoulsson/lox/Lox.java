@@ -24,6 +24,12 @@ public class Lox {
         }
     }
 
+    /*
+    Lox is a scripting language, which means it executes directly from
+    source. Our interpreter supports two ways of running code. If you
+    start jlox from the command line and give it a path to a file, it
+    reads the file and executes it.
+     */
     private static void runFile(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         run(new String(bytes, Charset.defaultCharset()));
@@ -32,6 +38,12 @@ public class Lox {
         if (hadError) System.exit(65);
     }
 
+    /*
+    If you want a more intimate conversation with your interpreter,
+    you can also run it interactively. Fire up jlox without any
+    arguments, and it drops you into a prompt where you can enter and
+    execute code one line at a time.
+     */
     private static void runPrompt() throws IOException {
         InputStreamReader input = new InputStreamReader(System.in);
         BufferedReader reader = new BufferedReader(input);
@@ -40,6 +52,10 @@ public class Lox {
             String line = reader.readLine();
             if (line == null) break;
             run(line);
+            /*
+            We need to reset this flag in the interactive loop. If the
+            user makes a mistake, it shouldn’t kill their entire session.
+             */
             hadError = false;
         }
     }
@@ -47,13 +63,18 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-//        // For now, just print the tokens.
-//        for (Token token : tokens) {
-//            System.out.println(token);
-//        }
+        // print the tokens.
+        for (Token token : tokens) {
+            System.out.println(token);
+        }
         Parser parser = new Parser(tokens);
         Expr expression = parser.parse();
 
+        /*
+        We’ll use this to ensure we don’t try to execute code that has
+        a known error. Also, it lets us exit with a non-zero exit code
+        like a good command line citizen should.
+         */
         if (hadError) {
             return;
         }
