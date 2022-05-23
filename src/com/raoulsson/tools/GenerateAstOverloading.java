@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 public class GenerateAstOverloading {
 
@@ -32,7 +31,7 @@ public class GenerateAstOverloading {
         writer.println("import java.util.List;");
         writer.println();
         writer.println("// Generated code by com.raoulsson.tools.GenerateAst");
-        writer.println("abstract class " + baseName + " {");
+        writer.println("public abstract class " + baseName + " {");
         writer.println();
 
         defineVisitor(writer, baseName, types);
@@ -66,13 +65,13 @@ public class GenerateAstOverloading {
     private static void defineType(PrintWriter writer, String baseName, String className, String fieldsList) {
         String[] fields = fieldsList.split(", ");
 
-        writer.println("    static class " + className + " extends " + baseName + " {");
+        writer.println("    public static class " + className + " extends " + baseName + " {");
         writer.println();
         for(String field : fields) {
-            writer.println("        private final " + field + ";");
+            writer.println("        final " + field + ";");
         }
         writer.println();
-        writer.println("        " + className + "(" + fieldsList + ") {");
+        writer.println("        public " + className + "(" + fieldsList + ") {");
         for (String field : fields) {
             String name = field.split(" ")[1];
             writer.println("            this." + name + " = " + name + ";");

@@ -3,22 +3,24 @@ package com.raoulsson.lox;
 import java.util.List;
 
 // Generated code by com.raoulsson.tools.GenerateAst
-abstract class Expr {
+public abstract class Expr {
 
     interface Visitor<R> {
-        R visit(Expr expr);
+        R visitBinaryExpr(Binary expr);
+        R visitGroupingExpr(Grouping expr);
+        R visitLiteralExpr(Literal expr);
+        R visitUnaryExpr(Unary expr);
     }
-
 
     abstract <R> R accept(Visitor<R> visitor);
 
-    static class Binary extends Expr {
+    public static class Binary extends Expr {
 
-        private final Expr left;
-        private final Token operator;
-        private final Expr right;
+        final Expr left;
+        final Token operator;
+        final Expr right;
 
-        Binary(Expr left, Token operator, Expr right) {
+        public Binary(Expr left, Token operator, Expr right) {
             this.left = left;
             this.operator = operator;
             this.right = right;
@@ -26,54 +28,54 @@ abstract class Expr {
 
         @Override
         <R> R accept(Visitor<R> visitor) {
-            return visitor.visit(this);
+            return visitor.visitBinaryExpr(this);
         }
 
     }
 
-    static class Grouping extends Expr {
+    public static class Grouping extends Expr {
 
-        private final Expr expression;
+        final Expr expression;
 
-        Grouping(Expr expression) {
+        public Grouping(Expr expression) {
             this.expression = expression;
         }
 
         @Override
         <R> R accept(Visitor<R> visitor) {
-            return visitor.visit(this);
+            return visitor.visitGroupingExpr(this);
         }
 
     }
 
-    static class Literal extends Expr {
+    public static class Literal extends Expr {
 
-        private final Object value;
+        final Object value;
 
-        Literal(Object value) {
+        public Literal(Object value) {
             this.value = value;
         }
 
         @Override
         <R> R accept(Visitor<R> visitor) {
-            return visitor.visit(this);
+            return visitor.visitLiteralExpr(this);
         }
 
     }
 
-    static class Unary extends Expr {
+    public static class Unary extends Expr {
 
-        private final Token operator;
-        private final Expr right;
+        final Token operator;
+        final Expr right;
 
-        Unary(Token operator, Expr right) {
+        public Unary(Token operator, Expr right) {
             this.operator = operator;
             this.right = right;
         }
 
         @Override
         <R> R accept(Visitor<R> visitor) {
-            return visitor.visit(this);
+            return visitor.visitUnaryExpr(this);
         }
 
     }
