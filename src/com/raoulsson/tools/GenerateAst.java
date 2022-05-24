@@ -112,9 +112,9 @@ public class GenerateAst {
         writer.println("        }");
 
         writer.println();
-        writer.println("        /*");
-        writer.println("        We have no clue who the visitor is, but we accept him and give ourselves to him.");
-        writer.println("        */");
+        writer.println("/*");
+        writer.println("We have no clue who the visitor is, but we accept him and give ourselves to him.");
+        writer.println("*/");
         writer.println("        @Override");
         writer.println("        <R> R accept(Visitor<R> visitor) {");
         writer.println("            return visitor.visit" + className + baseName + "(this);");

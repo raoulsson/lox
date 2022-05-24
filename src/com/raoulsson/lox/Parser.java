@@ -1,11 +1,7 @@
 package com.raoulsson.lox;
 
 import java.util.List;
-/*
-I know static imports are considered bad style by some, but they save me from
-having to sprinkle TokenType. all over the scanner and parser. Forgive me, but
-every character counts in a book.
- */
+
 import static com.raoulsson.lox.TokenType.*;
 
 /*
@@ -40,7 +36,7 @@ Nonterminal             Call to that rule’s function
 The “recursive” part of recursive descent is because when a grammar rule refers to
 itself—directly or indirectly—that translates to a recursive function call.
 
-As a walk through example, we use the one from the book:
+As a walk through example, we use the one from the book, the Lox source being:
 
     -123 * (45.67)
 
@@ -62,11 +58,21 @@ that are then fed into the parser, which produces this syntax tree as output:
 
 In the comments, refer to "STEP n", as we go along to see how the data is used
 and produced.
+The actual values that are produced in the example, are given in comments like
+such:
+
+    return equality();    // 45.67 // (* (- 123.0) (group 45.67))
+
+where 45.67 here would be the first value and so on, as we step along. It is
+not so difficult to understand the code in principle by simply mapping the
+grammar to code and get a feel for it, however, it also helps to go through
+the code with the magnifying glass and see what "recursive descent" actually
+does.
+As another helper, I added comments like "GOTO-N" to the code, so that it
+would be clear where to return to.
  */
+@SuppressWarnings("UnnecessaryLocalVariable")
 public class Parser {
-
-    private static class ParseError extends RuntimeException {}
-
     /*
     Like the scanner, the parser consumes a flat input sequence,
     only now we’re reading tokens instead of characters. We store
@@ -88,7 +94,14 @@ public class Parser {
      */
     Expr parse() {
         try {
-            return expression();
+            // GOTO-11 - A jump back marker to help the reader to navigate the actual code flow.
+            Expr expr = expression();
+            /*
+            STEP 32: We are finally done.
+            TOKEN : EOF
+            Return Binary (* (- 123.0) (group 45.67)) to client
+             */
+            return expr;
         } catch (ParseError error) {
             return null;
         }
@@ -105,14 +118,29 @@ public class Parser {
     that rule and returns it to the caller. When the body of the rule
     contains a nonterminal—a reference to another rule—we call that
     other rule’s method.
-
      */
     private Expr expression() {
         /*
-        STEP 1: Starting from the start of the tokens, nothing happens yet,
-        but expression yields equality in the grammar, so...
+        STEP 1: expression  → equality ;
+        TOKEN : MINUS (technically this happens in match(), but logically true)
          */
-        return equality();
+        /*
+        STEP 14: The token within the brackets is a new expression, so we start from the top
+        TOKEN : NUMBER 45.67
+         */
+        // GOTO-7
+        Expr expr = equality();
+        /*
+        STEP 25:
+        TOKEN : RIGHT_PAREN
+        Return 45.67 to GOTO-8
+         */
+        /*
+        STEP 31:
+        TOKEN : EOF
+        Return Binary (* (- 123.0) (group 45.67)) to GOTO-11
+         */
+        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
     }
 
     /*
@@ -120,83 +148,33 @@ public class Parser {
      */
     private Expr equality() {
         /*
-        STEP 2: equality yields comparison on the left side, so...
+        STEP 2: equality → comparison ( ( "!=" | "==" ) comparison )* ;
+        TOKEN : MINUS
          */
-        Expr expr = comparison();   // comparison
+        /*
+        STEP 15:
+        TOKEN : NUMBER 45.67
+         */
+        // GOTO-6
+        Expr expr = comparison();   // 45.67 // (* (- 123.0) (group 45.67))
 
         // ( ... )*
-        while(match(BANG_EQUAL, EQUAL_EQUAL)) { // ( "!=" | "==" )
+        while (match(BANG_EQUAL, EQUAL_EQUAL)) { // ( "!=" | "==" )
             Token operator = previous();
             Expr right = comparison();  // comparison
             expr = new Expr.Binary(expr, operator, right);
         }
-
-        return expr;
-    }
-
-    /*
-    Checks if the current token is of one in types. If so, it moves the token reader head
-    to the next token (aka: current++ in advance()).
-     */
-    private boolean match(TokenType... types) {
-        for(TokenType type : types) {
-            /*
-            STEP 7: We pass MINUS into check().
-             */
-            if (check(type)) {
-                /*
-                STEP 11: We match a MINUS token and advance the head.
-                 */
-                advance();
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private Token advance() {
-        if (!isAtEnd()) {
-            /*
-            STEP 12: Advance, or consume the token. From a reading perspective, we are done with it.
-             */
-            current++;
-        }
-        return previous();
-    }
-
-    /*
-    Thanks to the way the Scanner is implemented, the token sequence always ends with EOF.
-     */
-    private boolean isAtEnd() {
         /*
-        STEP 9: The current type is MINUS, not EOF, we return false.
+        STEP 24:
+        TOKEN : RIGHT_PAREN
+        Return 45.67 to GOTO-7
          */
-        return peek().type == EOF;
-    }
-
-    private boolean check(TokenType type) {
         /*
-        STEP 8: Check if we are at the end.
+        STEP 30:
+        TOKEN : EOF
+        Return Binary (* (- 123.0) (group 45.67)) to GOTO-7
          */
-        if (isAtEnd()) {
-            return false;
-        }
-        return peek().type == type;
-    }
-
-    private Token peek() {
-        /*
-        STEP 10: Now we actually look at the data at the current position, which is 0.
-        We return the token: MINUS.
-         */
-        return tokens.get(current);
-    }
-
-    private Token previous() {
-        /*
-        STEP 14: We get the MINUS token
-         */
-        return tokens.get(current - 1);
+        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
     }
 
     /*
@@ -204,17 +182,32 @@ public class Parser {
      */
     private Expr comparison() {
         /*
-        STEP 3: comparison yields term on the left side, so...
+        STEP 3: comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
+        TOKEN : MINUS
          */
-        Expr expr = term();
+        /*
+        STEP 16:
+        TOKEN : NUMBER 45.67
+         */
+        // GOTO-5
+        Expr expr = term(); // 45.67 // (* (- 123.0) (group 45.67))
 
         while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             Token operator = previous();
             Expr right = term();
             expr = new Expr.Binary(expr, operator, right);
         }
-
-        return expr;
+        /*
+        STEP 23:
+        TOKEN : RIGHT_PAREN
+        Return 45.67 to GOTO-6
+         */
+        /*
+        STEP 29:
+        TOKEN : EOF
+        Return Binary (* (- 123.0) (group 45.67)) to GOTO-6
+         */
+        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
     }
 
     /*
@@ -222,17 +215,32 @@ public class Parser {
      */
     private Expr term() {
         /*
-        STEP 4: term yields factor on the left side, so...
+        STEP 4: term        → factor ( ( "-" | "+" ) factor )* ;
+        TOKEN : MINUS
          */
-        Expr expr = factor();
+        /*
+        STEP 17:
+        TOKEN : NUMBER 45.67
+         */
+        // GOTO-4
+        Expr expr = factor();   // 45.67 // (* (- 123.0) (group 45.67))
 
         while (match(MINUS, PLUS)) {
             Token operator = previous();
             Expr right = factor();
             expr = new Expr.Binary(expr, operator, right);
         }
-
-        return expr;
+        /*
+        STEP 22:
+        TOKEN : RIGHT_PAREN
+        Return 45.67 to GOTO-5
+         */
+        /*
+        STEP 28:
+        TOKEN : EOF
+        Return Binary (* (- 123.0) (group 45.67)) to GOTO-5
+         */
+        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
     }
 
     /*
@@ -240,19 +248,40 @@ public class Parser {
      */
     private Expr factor() {
         /*
-        STEP 5: factor yields unary on the left side, so...
+        STEP 5: factor      → unary ( ( "/" | "*" ) unary )* ;
+        TOKEN : MINUS
          */
-        Expr expr = unary();
         /*
-        STEP 20: Token one (MINUS) and two (NUMBER 123.0) are dealt with and sit in expr now.
+        STEP 18:
+        TOKEN : NUMBER 45.67
          */
+        // GOTO-2
+        Expr expr = unary();    // (- 123.0) // 45.67
+
         while (match(SLASH, STAR)) {
-            Token operator = previous();
-            Expr right = unary();
+            Token operator = previous();    // *
+            /*
+            STEP 11: We match STAR and enter the while
+            TOKEN : LEFT_PAREN
+            */
+            // GOTO-3
+            Expr right = unary();   // (group 45.67)
+            /*
+            STEP 27:
+                expr = (- 123.0)
+                operator = *
+                right = (group 45.67)
+            TOKEN : EOF
+            Return Binary (* (- 123.0) (group 45.67)) to GOTO-4
+             */
             expr = new Expr.Binary(expr, operator, right);
         }
-
-        return expr;
+        /*
+        STEP 21:
+        TOKEN : RIGHT_PAREN
+        Return 45.67 to GOTO-4
+         */
+        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
     }
 
     /*
@@ -260,31 +289,50 @@ public class Parser {
      */
     private Expr unary() {
         /*
-        STEP 6: We haven't touched the tokens yet. This happens somewhere within match
-        or below. We check if it is either a ! or a -.
+        STEP 6: Matching in unary
+        TOKEN : MINUS
          */
         /*
-        STEP 16: We match again, but we got a literal NUMBER token next, so we don't enter
-        the if block. (Steps omitted).
+        STEP 8: Matching in primary
+        TOKEN : NUMBER 123.0
          */
         if (match(BANG, MINUS)) {
             /*
-            STEP 13: We have a MINUS token. Since we advanced the reading head, we need
-            to get the previous as the operator token.
+            STEP 7: We matched with MINUS. match() moves head, previous token is MINUS
+            TOKEN : NUMBER 123.0
              */
-            Token operator = previous();
+            Token operator = previous();    // MINUS
+            // GOTO-1
+            Expr right = unary();   // 123.0
             /*
-            STEP 15: We got the - of -123.0 but don't know about the NUMBER token with value
-            123.0 yet. We recurse to unary, as the grammar allows this (e.g. !!!123.0). In
-            our case, we expect the next token to be a primary with value 123.0.
-             */
-            Expr right = unary();
-            return new Expr.Unary(operator, right);
+            STEP 8.5:
+            TOKEN : STAR
+            Return Unary (- 123.0) to GOTO-1
+            */
+            return new Expr.Unary(operator, right); // (- 123.0)
         }
         /*
-        STEP 17: unary yield unary or primary. We know we got NUMBER and descent.
+        STEP 9:
+        TOKEN : NUMBER 123.0
+        Return 123 to GOTO-1
          */
-        return primary();
+        /*
+        STEP 12: We skip the if and enter primary()
+        TOKEN : LEFT_PAREN
+        Reappearance in STEP 26
+         */
+        /*
+        STEP 19:
+        TOKEN : NUMBER 45.67
+        Return 45.67 to GOTO-2
+         */
+        /*
+        STEP 26:
+        TOKEN : EOF
+        Return (group 45.67) to GOTO-3
+         */
+        // GOTO-9
+        return primary();   // 123.0 // 45.67 // (group 45.67)
     }
 
     /*
@@ -300,27 +348,100 @@ public class Parser {
         if (match(NIL)) {
             return new Expr.Literal(null);
         }
-        /*
-        STEP 18: We got NUMBER and enter the if...
-         */
         if (match(NUMBER, STRING)) {
             /*
-            STEP 19: Match advanced to the next token, so we get the previous token, our
-            NUMBER 123.0 and return a new Literal with the literal value of 123.0.
+            STEP 10:
+            TOKEN : STAR
+            Return literal number 123.0 to GOTO-1
              */
-            return new Expr.Literal(previous().literal);
+            /*
+            STEP 20:
+            TOKEN : RIGHT_PAREN
+            Return literal number 45.67 to GOTO-2
+             */
+            return new Expr.Literal(previous().literal);    // 123.0  // 45.67
         }
         if (match(LEFT_PAREN)) {
-            Expr expr = expression();
+            /*
+            STEP 13: primary in parens forwards token to be handled as expression:
+                primary     → ... | "(" expression ")" ;
+            TOKEN : NUMBER 45.67
+             */
+            // GOTO-8
+            Expr expr = expression();   // 45.67
+
             consume(RIGHT_PAREN, "Expect ')' after expression.");
-            return new Expr.Grouping(expr);
+            /*
+            STEP 26: we consumed RIGHT_PAREN, cause after expression in left parens, right
+            parens must follow.
+            TOKEN : EOF
+            Return (group 45.67) to GOTO-9
+             */
+            return new Expr.Grouping(expr); // (group 45.67)
         }
-        // https://stackoverflow.com/questions/70999675/how-does-this-recursive-descent-parser-match-specific-operators
-        // If we got right down to primary() and still nothing matches, then the token we have cannot possibly be the
-        // start of an expression. In this case, throw an error.
         throw error(peek(), "Expected expression.");
     }
 
+    /*
+    Checks if the current token is of one in types. If so, it moves the token reader head
+    to the next token (aka: current++ in advance()).
+     */
+    private boolean match(TokenType... types) {
+        for (TokenType type : types) {
+            if (check(type)) {
+                advance();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /*
+    We handled a token, time to move to the next if not at end.
+     */
+    private Token advance() {
+        if (!isAtEnd()) {
+            current++;
+        }
+        return previous();
+    }
+
+    /*
+    Thanks to the way the Scanner is implemented, the token sequence always ends with EOF.
+     */
+    private boolean isAtEnd() {
+        return peek().type == EOF;
+    }
+
+    /*
+    Look ahead if the next token is of a certain type
+     */
+    private boolean check(TokenType type) {
+        if (isAtEnd()) {
+            return false;
+        }
+        return peek().type == type;
+    }
+
+    /*
+    Look at the current token but do not move the reader head, don't consume it.
+     */
+    private Token peek() {
+        return tokens.get(current);
+    }
+
+    /*
+    Get the previous token. Needed as match moves the head, and we often need the last
+    token as operator.
+     */
+    private Token previous() {
+        return tokens.get(current - 1);
+    }
+
+    /*
+    Some tokens don't produce an output, but they still have to be encountered and
+    consumed, removed from sight. The only candidate token at this point is RiGHT_PAREN.
+     */
     private Token consume(TokenType type, String message) {
         if (check(type)) {
             return advance();
@@ -328,11 +449,18 @@ public class Parser {
         throw error(peek(), message);
     }
 
+    /*
+    Return an error with context. To throw or present it to the user in
+    a meaningful way, is the client's job. Thus, we don't throw it.
+     */
     private ParseError error(Token token, String message) {
         Lox.error(token, message);
         return new ParseError();
     }
 
+    /*
+    To be seen...
+     */
     private void synchronize() {
         advance();
 
@@ -355,4 +483,8 @@ public class Parser {
             advance();
         }
     }
+
+    private static class ParseError extends RuntimeException {
+    }
+
 }

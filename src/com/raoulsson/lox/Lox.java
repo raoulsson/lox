@@ -31,6 +31,7 @@ public class Lox {
     reads the file and executes it.
      */
     private static void runFile(String path) throws IOException {
+        System.out.println("Reading LOX source file from: " + path);
         byte[] bytes = Files.readAllBytes(Paths.get(path));
         run(new String(bytes, Charset.defaultCharset()));
 
@@ -61,9 +62,11 @@ public class Lox {
     }
 
     private static void run(String source) {
+        System.out.println("Source:\n" + source);
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         // print the tokens.
+        System.out.println("Scanned tokens:");
         int c = 1;
         for (Token token : tokens) {
             System.out.println(c++ + ": " + token.toStringParserView());
@@ -80,7 +83,7 @@ public class Lox {
             return;
         }
 
-        System.out.println(new AstPrinter().print(expression));
+        System.out.println("AST: " + new AstPrinter().print(expression));
     }
 
     static void error(Token token, String message) {
