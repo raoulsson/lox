@@ -17,9 +17,9 @@ public abstract class Expr {
 
     abstract <R> R accept(Visitor<R> visitor);
 
-	/*
-	Binary → expression operator expression ;
-	*/
+    /*
+    Binary → expression operator expression ;
+    */
     public static class Binary extends Expr {
 
         final Expr left;
@@ -39,9 +39,9 @@ public abstract class Expr {
 
     }
 
-	/*
-	Grouping → "(" expression ")" ;
-	*/
+    /*
+    Grouping → "(" expression ")" ;
+    */
     public static class Grouping extends Expr {
 
         final Expr expression;
@@ -57,9 +57,9 @@ public abstract class Expr {
 
     }
 
-	/*
-	Literal → NUMBER | STRING | "true" | "false" | "nil" ;
-	*/
+    /*
+    Literal → NUMBER | STRING | "true" | "false" | "nil" ;
+    */
     public static class Literal extends Expr {
 
         final Object value;
@@ -75,9 +75,9 @@ public abstract class Expr {
 
     }
 
-	/*
-	Unary → ("-"|"!")expression ;
-	*/
+    /*
+    Unary → ("-"|"!")expression ;
+    */
     public static class Unary extends Expr {
 
         final Token operator;

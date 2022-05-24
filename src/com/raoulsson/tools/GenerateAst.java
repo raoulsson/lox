@@ -69,9 +69,9 @@ public class GenerateAst {
     private static void defineType(PrintWriter writer, String baseName, String className, String fieldsList, String comment) {
         String[] fields = fieldsList.split(", ");
 
-        writer.println("\t/*");
-        writer.println("\t" + className + " → " + comment);
-        writer.println("\t*/");
+        writer.println("/*");
+        writer.println("" + className + " → " + comment);
+        writer.println("*/");
         writer.println("    public static class " + className + " extends " + baseName + " {");
         writer.println();
         for(String field : fields) {
