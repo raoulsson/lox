@@ -14,7 +14,20 @@ public abstract class Expr {
         R visitLiteralExpr(Literal expr);
         R visitUnaryExpr(Unary expr);
     }
-
+    /*
+    The Visitor pattern is the most widely misunderstood pattern in all of Design
+    Patterns, which is really saying something when you look at the software architecture
+    excesses of the past couple of decades.
+    The trouble starts with terminology. The pattern isn’t about “visiting” and the “accept”
+     method in it doesn’t conjure up any helpful imagery either. Many think the pattern has to
+    do with traversing trees, which isn’t the case at all. We are going to use it on a set of
+    classes that are tree-like, but that’s a coincidence. As you’ll see, the pattern works as well on a
+    single object. The Visitor pattern is really about approximating the functional style within an OOP
+    language. It lets us add new columns to that table easily. We can define all of the behavior
+    for a new operation on a set of types in one place, without having to touch the types themselves.
+    It does this the same way we solve almost every problem in computer science: by adding a layer
+    of indirection.
+    */
     abstract <R> R accept(Visitor<R> visitor);
 
     /*

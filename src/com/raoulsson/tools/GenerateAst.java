@@ -24,7 +24,7 @@ public class GenerateAst {
     }
 
     private static void defineAst(String outputDir, String baseName, List<String> types) throws IOException {
-        String path = outputDir + "/" + baseName + ".candidate.java";
+        String path = outputDir + "/" + baseName + ".java.txt";
         PrintWriter writer = new PrintWriter(path, StandardCharsets.UTF_8);
 
         writer.println("package com.raoulsson.lox;");
@@ -40,7 +40,20 @@ public class GenerateAst {
 
         defineVisitor(writer, baseName, types);
 
-        writer.println();
+        writer.println("/*");
+        writer.println("The Visitor pattern is the most widely misunderstood pattern in all of Design \nPatterns, " +
+                "which is really saying something when you look at the software architecture \nexcesses of the past " +
+                "couple of decades.\n" +
+                "The trouble starts with terminology. The pattern isn’t about “visiting” and the “accept”\n method in " +
+                "it doesn’t conjure up any helpful imagery either. Many think the pattern has to \ndo with traversing " +
+                "trees, which isn’t the case at all. We are going to use it on a set of \nclasses that are tree-like, " +
+                "but that’s a coincidence. As you’ll see, the pattern works as well on a \nsingle object. " +
+                "The Visitor pattern is really about approximating the functional style within an OOP \nlanguage. " +
+                "It lets us add new columns to that table easily. We can define all of the behavior \nfor a new " +
+                "operation on a set of types in one place, without having to touch the types themselves. \nIt does " +
+                "this the same way we solve almost every problem in computer science: by adding a layer \nof " +
+                "indirection.");
+        writer.println("*/");
         writer.println("    abstract <R> R accept(Visitor<R> visitor);");
         writer.println();
 
