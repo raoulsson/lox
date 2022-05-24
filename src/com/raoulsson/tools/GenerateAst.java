@@ -16,15 +16,15 @@ public class GenerateAst {
         }
         String outputDir = args[0];
         defineAst(outputDir, "Expr", Arrays.asList(
-                "Binary     : Expr left, Token operator, Expr right",
-                "Grouping   : Expr expression",
-                "Literal    : Object value",
-                "Unary      : Token operator, Expr right"
+                "Binary     : Expr left, Token operator, Expr right : expression operator expression ;",
+                "Grouping   : Expr expression : \"(\" expression \")\" ; ",
+                "Literal    : Object value : NUMBER | STRING | \"true\" | \"false\" | \"nil\" ;",
+                "Unary      : Token operator, Expr right : (\"-\"|\"!\")expression ;"
         ));
     }
 
     private static void defineAst(String outputDir, String baseName, List<String> types) throws IOException {
-        String path = outputDir + "/" + baseName + ".java";
+        String path = outputDir + "/" + baseName + ".candidate.java";
         PrintWriter writer = new PrintWriter(path, StandardCharsets.UTF_8);
 
         writer.println("package com.raoulsson.lox;");
@@ -32,6 +32,9 @@ public class GenerateAst {
         writer.println("import java.util.List;");
         writer.println();
         writer.println("// Generated code by com.raoulsson.tools.GenerateAst");
+        writer.println("/*");
+        writer.println("expression  → literal | unary | binary | grouping ;");
+        writer.println("*/");
         writer.println("public abstract class " + baseName + " {");
         writer.println();
 
@@ -44,7 +47,8 @@ public class GenerateAst {
         for (String type : types) {
             String className = type.split(":")[0].trim();
             String fields = type.split(":")[1].trim();
-            defineType(writer, baseName, className, fields);
+            String comment = type.split(":")[2].trim();
+            defineType(writer, baseName, className, fields, comment);
         }
 
         writer.println("}");
@@ -62,9 +66,12 @@ public class GenerateAst {
         writer.println("    }");
     }
 
-    private static void defineType(PrintWriter writer, String baseName, String className, String fieldsList) {
+    private static void defineType(PrintWriter writer, String baseName, String className, String fieldsList, String comment) {
         String[] fields = fieldsList.split(", ");
 
+        writer.println("\t/*");
+        writer.println("\t" + className + " → " + comment);
+        writer.println("\t*/");
         writer.println("    public static class " + className + " extends " + baseName + " {");
         writer.println();
         for(String field : fields) {

@@ -5,7 +5,7 @@ import com.raoulsson.lox.*;
 public class TestRunAstPrinter {
 
     public static void main(String[] args) {
-        Expr expression = new Expr.Binary(
+       Expr expression = new Expr.Binary(
                 new Expr.Unary(
                         new Token(TokenType.MINUS, "-", null, 1),
                         new Expr.Literal(123)),

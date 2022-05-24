@@ -4,7 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+/*
+I know static imports are considered bad style by some, but they save me from
+having to sprinkle TokenType. all over the scanner and parser. Forgive me, but
+every character counts in a book.
+ */
 import static com.raoulsson.lox.TokenType.*;
 
 /*

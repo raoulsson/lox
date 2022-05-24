@@ -3,6 +3,9 @@ package com.raoulsson.lox;
 import java.util.List;
 
 // Generated code by com.raoulsson.tools.GenerateAst
+/*
+expression  → literal | unary | binary | grouping ;
+*/
 public abstract class Expr {
 
     interface Visitor<R> {
@@ -14,6 +17,9 @@ public abstract class Expr {
 
     abstract <R> R accept(Visitor<R> visitor);
 
+	/*
+	Binary → expression operator expression ;
+	*/
     public static class Binary extends Expr {
 
         final Expr left;
@@ -33,6 +39,9 @@ public abstract class Expr {
 
     }
 
+	/*
+	Grouping → "(" expression ")" ;
+	*/
     public static class Grouping extends Expr {
 
         final Expr expression;
@@ -48,6 +57,9 @@ public abstract class Expr {
 
     }
 
+	/*
+	Literal → NUMBER | STRING | "true" | "false" | "nil" ;
+	*/
     public static class Literal extends Expr {
 
         final Object value;
@@ -63,6 +75,9 @@ public abstract class Expr {
 
     }
 
+	/*
+	Unary → ("-"|"!")expression ;
+	*/
     public static class Unary extends Expr {
 
         final Token operator;
