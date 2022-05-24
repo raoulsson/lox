@@ -8,6 +8,16 @@ expression  → literal | unary | binary | grouping ;
 */
 public abstract class Expr {
 
+    /*
+    Any class that needs to operate on the Expr data, can implement the Visitor<R>
+    interface. Currently: AstPrinter
+
+    With method overloading, we would only specify
+
+        R visit(Expr expr)
+
+    and do the dispatching within this method (Binary, Grouping, ...)
+    */
     interface Visitor<R> {
         R visitBinaryExpr(Binary expr);
         R visitGroupingExpr(Grouping expr);
@@ -27,6 +37,9 @@ public abstract class Expr {
     for a new operation on a set of types in one place, without having to touch the types themselves.
     It does this the same way we solve almost every problem in computer science: by adding a layer
     of indirection.
+
+    All subclasses of Expr accept any class that implements the Visitor<R> interface.
+    They pass themselves to the visitor and return it's return value of type R.
     */
     abstract <R> R accept(Visitor<R> visitor);
 
@@ -45,6 +58,9 @@ public abstract class Expr {
             this.right = right;
         }
 
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitBinaryExpr(this);
@@ -63,6 +79,9 @@ public abstract class Expr {
             this.expression = expression;
         }
 
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitGroupingExpr(this);
@@ -81,6 +100,9 @@ public abstract class Expr {
             this.value = value;
         }
 
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitLiteralExpr(this);
@@ -101,6 +123,9 @@ public abstract class Expr {
             this.right = right;
         }
 
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitUnaryExpr(this);

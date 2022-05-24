@@ -53,6 +53,9 @@ public class GenerateAst {
                 "operation on a set of types in one place, without having to touch the types themselves. \nIt does " +
                 "this the same way we solve almost every problem in computer science: by adding a layer \nof " +
                 "indirection.");
+        writer.println();
+        writer.println("All subclasses of Expr accept any class that implements the Visitor<R> interface.");
+        writer.println("They pass themselves to the visitor and return it's return value of type R.");
         writer.println("*/");
         writer.println("    abstract <R> R accept(Visitor<R> visitor);");
         writer.println();
@@ -69,6 +72,16 @@ public class GenerateAst {
     }
 
     private static void defineVisitor(PrintWriter writer, String baseName, List<String> types) {
+        writer.println("/*");
+        writer.println("Any class that needs to operate on the Expr data, can implement the Visitor<R>");
+        writer.println("interface. Currently: AstPrinter");
+        writer.println("");
+        writer.println("With method overloading, we would only specify");
+        writer.println();
+        writer.println("    R visit(Expr expr)");
+        writer.println();
+        writer.println("and do the dispatching within this method (Binary, Grouping, ...)");
+        writer.println("*/");
         writer.println("    interface Visitor<R> {");
 
         for (String type : types) {
@@ -99,6 +112,9 @@ public class GenerateAst {
         writer.println("        }");
 
         writer.println();
+        writer.println("        /*");
+        writer.println("        We have no clue who the visitor is, but we accept him and give ourselves to him.");
+        writer.println("        */");
         writer.println("        @Override");
         writer.println("        <R> R accept(Visitor<R> visitor) {");
         writer.println("            return visitor.visit" + className + baseName + "(this);");
