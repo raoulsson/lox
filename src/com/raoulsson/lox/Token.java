@@ -48,4 +48,8 @@ public class Token {
         return "Token {\n\ttype: " + type + "\n\tlexeme: " + lexeme + "\n\tliteral: " + literal + "\n}";
     }
 
+    public String toStringParserView() {
+        return type + (literal == null ? "" : " " + literal);
+    }
+
 }

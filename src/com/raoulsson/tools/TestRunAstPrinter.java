@@ -5,6 +5,7 @@ import com.raoulsson.lox.*;
 public class TestRunAstPrinter {
 
     public static void main(String[] args) {
+        // -123 * (45.67)
        Expr expression = new Expr.Binary(
                 new Expr.Unary(
                         new Token(TokenType.MINUS, "-", null, 1),
