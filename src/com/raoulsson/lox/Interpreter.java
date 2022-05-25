@@ -21,6 +21,45 @@ types at different points in time.
 public class Interpreter implements Expr.Visitor<Object> {
 
     /*
+    Entry point to Interpreter.
+
+    The Interpreter’s public API is simply one method. This
+    takes in a syntax tree for an expression and evaluates it.
+    If that succeeds, evaluate() returns an object for the
+    result value. interpret() converts that to a string and
+    shows it to the user.
+     */
+    void interpret(Expr expression) {
+        try {
+            Object value = evaluate(expression);
+            System.out.println(stringify(value));
+        } catch(RuntimeError error) {
+            Lox.runtimeError(error);
+        }
+    }
+
+    /*
+    To convert a Lox value to a string.
+
+    This is another of those pieces of code like isTruthy()
+    that crosses the membrane between the user’s view of Lox
+    objects and their internal representation in Java.
+     */
+    private String stringify(Object object) {
+        if (object == null) {
+            return "nil";
+        }
+        if (object instanceof Double) {
+            String text = object.toString();
+            if (text.endsWith(".0")) {
+                text = text.substring(0, text.length() - 2);
+            }
+            return text;
+        }
+        return object.toString();
+    }
+
+    /*
     The leaves of an expression tree—the atomic bits of syntax
     that all other expressions are composed of—are literals.
     Literals are almost values already, but the distinction is
@@ -83,6 +122,7 @@ public class Interpreter implements Expr.Visitor<Object> {
 
         switch (expr.operator.type) {
             case MINUS:
+                checkNumberOperand(expr.operator, right);
                 return -(double)right;
             case BANG:
                 return !isTruthy(right);
@@ -109,18 +149,23 @@ public class Interpreter implements Expr.Visitor<Object> {
 
         switch (expr.operator.type) {
             case GREATER:
+                checkNumberOperand(expr.operator, left, right);
                 return (double)left > (double)right;
             case GREATER_EQUAL:
+                checkNumberOperand(expr.operator, left, right);
                 return (double)left >= (double)right;
             case LESS:
+                checkNumberOperand(expr.operator, left, right);
                 return (double)left < (double)right;
             case LESS_EQUAL:
+                checkNumberOperand(expr.operator, left, right);
                 return (double)left <= (double)right;
             case BANG_EQUAL:
                 return !isEqual(left, right);
             case EQUAL_EQUAL:
                 return isEqual(left, right);
             case MINUS:
+                checkNumberOperand(expr.operator, left, right);
                 return (double)left - (double)right;
             case PLUS:
                 if (left instanceof Double && right instanceof Double) {
@@ -129,10 +174,19 @@ public class Interpreter implements Expr.Visitor<Object> {
                 if (left instanceof String && right instanceof String) {
                     return (String)left + (String)right;
                 }
-                break;
+                /*
+                checkNumberOperand ?
+
+                Since + is overloaded for numbers and strings, it already has code to
+                check the types. All we need to do is fail if neither of the two success
+                cases match.
+                */
+                throw new RuntimeError(expr.operator, "Operands must be two numbers or two strings.");
             case SLASH:
+                checkNumberOperand(expr.operator, left, right);
                 return (double)left / (double)right;
             case STAR:
+                checkNumberOperand(expr.operator, left, right);
                 return (double)left * (double)right;
         }
 
@@ -177,5 +231,25 @@ public class Interpreter implements Expr.Visitor<Object> {
             return false;
         }
         return left.equals(right);
+    }
+
+    /*
+    Checks to see if the operator of an arithmetic operation is a number.
+     */
+    private void checkNumberOperand(Token operator, Object operand) {
+        if (operand instanceof Double) {
+            return;
+        }
+        throw new RuntimeError(operator, "Operand must be a number");
+    }
+
+    /*
+    Same as above but for two operands.
+     */
+    private void checkNumberOperand(Token operator, Object left, Object right) {
+        if (left instanceof Double && right instanceof Double) {
+            return;
+        }
+        throw new RuntimeError(operator, "Operands must be numbers.");
     }
 }

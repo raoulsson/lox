@@ -11,7 +11,24 @@ import java.util.List;
 // https://opensource.apple.com/source/Libc/Libc-320/include/sysexits.h
 public class Lox {
 
+    /*
+    We make the field static so that successive calls to run() inside a REPL
+    session reuse the same interpreter. That doesn’t make a difference now,
+    but it will later when the interpreter stores global variables. Those
+    variables should persist throughout the REPL session.
+     */
+    private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    /*
+    This field plays a small but important role.
+
+    If the user is running a Lox script from a file and a runtime error
+    occurs, we set an exit code when the process quits to let the calling
+    process know.
+
+    Not everyone cares about shell etiquette, but we do.
+     */
+    static boolean hadRuntimeError = false;
 
     public static void main(String[] args) throws IOException {
         if (args.length > 1) {
@@ -37,6 +54,7 @@ public class Lox {
 
         // Indicate an error in the exit code.
         if (hadError) System.exit(65);
+        if (hadRuntimeError) System.exit(70);
     }
 
     /*
@@ -84,6 +102,17 @@ public class Lox {
         }
 
         System.out.println("AST: " + new AstPrinter().print(expression));
+
+        /*
+        We have an entire language pipeline now: scanning, parsing, and execution.
+        Congratulations, you now have your very own arithmetic calculator.
+
+        As you can see, the interpreter is pretty bare bones. But the Interpreter
+        class and the visitor pattern we’ve set up today form the skeleton that
+        later chapters will stuff full of interesting guts—variables, functions,
+        etc. Right now, the interpreter doesn’t do very much, but it’s alive!
+         */
+        interpreter.interpret(expression);
     }
 
     /*
@@ -112,5 +141,15 @@ public class Lox {
         hadError = true;
     }
 
+    /*
+    If a runtime error is thrown while evaluating the expression, interpret()
+    catches it. This lets us report the error to the user and then gracefully
+    continue. All of our existing error reporting code lives in the Lox class,
+    so we put this method there too.
+     */
+    public static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() + "\n[line " + error.token.line + "]");
+        hadRuntimeError = true;
+    }
 }
 
