@@ -62,14 +62,21 @@ public class GenerateAst {
             writer.println("There is no place in the grammar where both an expression and a");
             writer.println("statement is allowed. The operands of, say, + are always expressions,");
             writer.println("never statements. The body of a while loop is always a statement.");
+            writer.println();
+            writer.println("State and statements go hand in hand. Since statements, by definition,");
+            writer.println("don’t evaluate to a value, they need to do something else to be useful.");
+            writer.println("That something is called a side effect. It could mean producing");
+            writer.println("user-visible output or modifying some state in the interpreter that can");
+            writer.println("be detected later. The latter makes them a great fit for defining");
+            writer.println("variables or other named entities.");
             writer.println("*/");
         }
         writer.println("public abstract class " + baseName + " {");
         writer.println();
 
-        if(genExpr) {
-            defineVisitor(writer, baseName, types);
+        defineVisitor(writer, baseName, types);
 
+        if(genExpr) {
             writer.println("/*");
             writer.println("The Visitor pattern is the most widely misunderstood pattern in all of Design \nPatterns, " +
                     "which is really saying something when you look at the software architecture \nexcesses of the past " +
@@ -87,9 +94,13 @@ public class GenerateAst {
             writer.println("All subclasses of Expr accept any class that implements the Visitor<R> interface.");
             writer.println("They pass themselves to the visitor and return it's return value of type R.");
             writer.println("*/");
-            writer.println("    abstract <R> R accept(Visitor<R> visitor);");
-            writer.println();
         }
+        if (!genExpr) {
+            writer.println("/*");
+            writer.println("*/");
+        }
+        writer.println("    abstract <R> R accept(Visitor<R> visitor);");
+        writer.println();
 
         for (String type : types) {
             String className = type.split(":")[0].trim();
@@ -103,16 +114,30 @@ public class GenerateAst {
     }
 
     private static void defineVisitor(PrintWriter writer, String baseName, List<String> types) {
-        writer.println("/*");
-        writer.println("Any class that needs to operate on the Expr data, can implement the Visitor<R>");
-        writer.println("interface. Currently: AstPrinter");
-        writer.println("");
-        writer.println("With method overloading, we would only specify");
-        writer.println();
-        writer.println("    R visit(Expr expr)");
-        writer.println();
-        writer.println("and do the dispatching within this method (Binary, Grouping, ...)");
-        writer.println("*/");
+        if (genExpr) {
+            writer.println("/*");
+            writer.println("Any class that needs to operate on the Expr data, can implement the Visitor<R>");
+            writer.println("interface. Currently: AstPrinter");
+            writer.println("");
+            writer.println("With method overloading, we would only specify");
+            writer.println();
+            writer.println("    R visit(Expr expr)");
+            writer.println();
+            writer.println("and do the dispatching within this method (Binary, Grouping, ...)");
+            writer.println("*/");
+        }
+        if (!genExpr) {
+            writer.println("/*");
+            writer.println("Any class that needs to operate on the Stmt data, can implement the Visitor<R>");
+            writer.println("interface. Currently: Interpreter");
+            writer.println("");
+            writer.println("With method overloading, we would only specify");
+            writer.println();
+            writer.println("    R visit(Expr expr)");
+            writer.println();
+            writer.println("and do the dispatching within this method (ExpressionStatement, PrintStatement, ...)");
+            writer.println("*/");
+        }
         writer.println("    interface Visitor<R> {");
 
         for (String type : types) {
@@ -121,6 +146,7 @@ public class GenerateAst {
         }
 
         writer.println("    }");
+        writer.println();
     }
 
     private static void defineType(PrintWriter writer, String baseName, String className, String fieldsList, String comment) {
@@ -129,6 +155,24 @@ public class GenerateAst {
         writer.println("/*");
         if(genExpr) {
             writer.println("" + className + " → " + comment);
+        }
+        if (!genExpr && className.equals("Expression")) {
+            writer.println("An expression statement lets you place an expression where a");
+            writer.println("statement is expected. They exist to evaluate expressions that");
+            writer.println("have side effects. You may not notice them, but you use them");
+            writer.println("all the time in C, Java, and other languages. Any time you see");
+            writer.println("a function or method call followed by a ;, you’re looking at an");
+            writer.println("expression statement.");
+        }
+        if (!genExpr && className.equals("Print")) {
+            writer.println("A print statement evaluates an expression and displays the result");
+            writer.println("to the user. I admit it’s weird to bake printing right into the");
+            writer.println("language instead of making it a library function. Doing so is a");
+            writer.println("concession to the fact that we’re building this interpreter one");
+            writer.println("chapter at a time and want to be able to play with it before it’s");
+            writer.println("all done. To make print a library function, we’d have to wait until");
+            writer.println("we had all of the machinery for defining and calling functions before");
+            writer.println("we could witness any side effects.");
         }
         writer.println("*/");
         writer.println("    public static class " + className + " extends " + baseName + " {");
@@ -145,7 +189,7 @@ public class GenerateAst {
         writer.println("        }");
 
         writer.println();
-        if(genExpr) {
+        //if(genExpr) {
             writer.println("/*");
             writer.println("We have no clue who the visitor is, but we accept him and give ourselves to him.");
             writer.println("*/");
@@ -154,7 +198,7 @@ public class GenerateAst {
             writer.println("            return visitor.visit" + className + baseName + "(this);");
             writer.println("        }");
             writer.println();
-        }
+        //}
         writer.println("    }");
         writer.println();
     }

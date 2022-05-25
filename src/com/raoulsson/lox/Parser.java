@@ -45,7 +45,7 @@ As a walk through example, we use the one from the book, the Lox source being:
 
     -123 * (45.67)
 
-To run it, feed the file "lox_test_sources/parser_example_from_book.lox" to Lox.
+To run it, feed the file "lox_test_sources/parser_example_from_book_1.lox" to Lox.
 
 First the scanner produces these tokens:
 

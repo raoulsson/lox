@@ -1,5 +1,8 @@
 package com.raoulsson.lox;
 
+import java.sql.Statement;
+import java.util.List;
+
 /*
 In Lox, values are created by literals, computed by expressions,
 and stored in variables. The user sees these as Lox objects, but
@@ -17,19 +20,53 @@ types at different points in time.
     number              Double
     string              String
 
+Our parser can now produce statement syntax trees, so the
+next and final step is to interpret them. As in expressions,
+we use the Visitor pattern, but we have a new visitor interface,
+Stmt.Visitor, to implement since statements have their own base
+class.
+
+Unlike expressions, statements produce no values, so the return
+type of the visit methods is Void, not Object.
  */
-public class Interpreter implements Expr.Visitor<Object> {
+public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     /*
-    Entry point to Interpreter.
+    The (new) entry point to Interpreter.
+     */
+    void interpret(List<Stmt> statements) {
+        try {
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        } catch (RuntimeError error) {
+            Lox.runtimeError(error);
+        }
+    }
+
+    /*
+    That’s the statement analogue to the evaluate() method we have
+    for expressions.
+     */
+    private void execute(Stmt stmt) {
+        stmt.accept(this);
+    }
+
+    /*
+    The (old) entry point to Interpreter.
 
     The Interpreter’s public API is simply one method. This
     takes in a syntax tree for an expression and evaluates it.
     If that succeeds, evaluate() returns an object for the
     result value. interpret() converts that to a string and
     shows it to the user.
+
+    Chapter 7: Our interpreter is able to visit statements now,
+    but we have some work to do to feed them to it...
+
+    We rename it to interpretExpr.
      */
-    void interpret(Expr expression) {
+    void interpretExpr(Expr expression) {
         try {
             Object value = evaluate(expression);
             System.out.println(stringify(value));
@@ -251,5 +288,29 @@ public class Interpreter implements Expr.Visitor<Object> {
             return;
         }
         throw new RuntimeError(operator, "Operands must be numbers.");
+    }
+
+    /*
+    We evaluate the inner expression using our existing evaluate() method and
+    discard the value. Then we return null. Java requires that to satisfy the
+    special capitalized Void return type. Weird, but what can you do?
+     */
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
+        evaluate(stmt.expression);
+        return null;
+    }
+
+    /*
+    The print statement’s visit method isn’t much different.
+    Before discarding the expression’s value, we convert it to
+    a string using the stringify() method we introduced in the
+    last chapter and then dump it to stdout.
+     */
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) {
+        Object value = evaluate(stmt.expression);
+        System.out.println(stringify(value));
+        return null;
     }
 }

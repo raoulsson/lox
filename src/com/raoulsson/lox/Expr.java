@@ -24,6 +24,7 @@ public abstract class Expr {
         R visitLiteralExpr(Literal expr);
         R visitUnaryExpr(Unary expr);
     }
+
     /*
     The Visitor pattern is the most widely misunderstood pattern in all of Design
     Patterns, which is really saying something when you look at the software architecture

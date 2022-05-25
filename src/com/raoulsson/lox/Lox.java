@@ -83,14 +83,18 @@ public class Lox {
         System.out.println("Source:\n" + source);
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
+        //List<Token> tokens2 = scanner.scanTokens();
         // print the tokens.
         System.out.println("Scanned tokens:");
         int c = 1;
         for (Token token : tokens) {
             System.out.println(c++ + ": " + token.toStringParserView());
         }
-        Parser parser = new Parser(tokens);
-        Expr expression = parser.parseToExpr();
+        //Parser parser1 = new Parser(tokens1);
+        //Expr expression = parser1.parseToExpr();   // Until Chapter 8
+
+        Parser parser2 = new Parser(tokens);
+        List<Stmt> statements = parser2.parse();     // As of Chapter 8
 
         /*
         We’ll use this to ensure we don’t try to execute code that has
@@ -101,7 +105,7 @@ public class Lox {
             return;
         }
 
-        System.out.println("AST: " + new AstPrinter().print(expression));
+        //System.out.println("AST: " + new AstPrinter().print(expression));   // Until Chapter 8
 
         /*
         We have an entire language pipeline now: scanning, parsing, and execution.
@@ -112,7 +116,8 @@ public class Lox {
         later chapters will stuff full of interesting guts—variables, functions,
         etc. Right now, the interpreter doesn’t do very much, but it’s alive!
          */
-        interpreter.interpret(expression);
+        //interpreter.interpretExpr(expression);  // Until Chapter 8
+        interpreter.interpret(statements);  // As of Chapter 8
     }
 
     /*
