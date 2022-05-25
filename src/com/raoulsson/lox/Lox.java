@@ -86,6 +86,11 @@ public class Lox {
         System.out.println("AST: " + new AstPrinter().print(expression));
     }
 
+    /*
+    This reports an error at a given token. It shows the token’s location and the
+    token itself. This will come in handy later since we use tokens throughout
+    the interpreter to track locations in code.
+     */
     static void error(Token token, String message) {
         if (token.type == TokenType.EOF) {
             report(token.line, " at end", message);
@@ -98,6 +103,10 @@ public class Lox {
         report(line, "", message);
     }
 
+    /*
+    For now we just print the errors. We could also collect them in some other fasion
+    and display them later to the users IDE for example.
+     */
     private static void report(int line, String where, String message) {
         System.err.println("[line " + line + "] Error" + where + ": " + message);
         hadError = true;

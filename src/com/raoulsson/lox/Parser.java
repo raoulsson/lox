@@ -36,6 +36,10 @@ Nonterminal             Call to that rule’s function
 The “recursive” part of recursive descent is because when a grammar rule refers to
 itself—directly or indirectly—that translates to a recursive function call.
 
+While in recursive descent, the rules it is in, is not stored explicitly in fields.
+Instead, we use Java’s own call stack to track what the parser is doing. Each rule
+in the middle of being parsed is a call frame on the stack.
+
 As a walk through example, we use the one from the book, the Lox source being:
 
     -123 * (45.67)
@@ -450,6 +454,18 @@ public class Parser {
     }
 
     /*
+    This is a simple sentinel class we use to unwind the parser. The error()
+    method returns it instead of throwing because we want to let the calling
+    method inside the parser decide whether to unwind or not. Some parse
+    errors occur in places where the parser isn’t likely to get into a weird
+    state and we don’t need to synchronize. In those places, we simply report
+    the error and keep on truckin’.
+
+    For example, Lox limits the number of arguments you can pass to a function.
+    If you pass too many, the parser needs to report that error, but it can
+    and should simply keep on parsing the extra arguments instead of freaking
+    out and going into panic mode.
+
     Return an error with context. To throw or present it to the user in
     a meaningful way, is the client's job. Thus, we don't throw it.
      */
@@ -459,7 +475,34 @@ public class Parser {
     }
 
     /*
-    To be seen...
+    With recursive descent, the parser’s state—which rules it is in
+    the middle of recognizing—is not stored explicitly in fields.
+    Instead, we use Java’s own call stack to track what the parser
+    is doing. Each rule in the middle of being parsed is a call frame
+    on the stack. In order to reset that state, we need to clear out
+    those call frames.
+
+    The natural way to do that in Java is exceptions. When we want to
+    synchronize, we throw that ParseError object. Higher up in the
+    method for the grammar rule we are synchronizing to, we’ll catch it.
+    Since we synchronize on statement boundaries, we’ll catch the
+    exception there. After the exception is caught, the parser is in
+    the right state. All that’s left is to synchronize the tokens.
+
+    We want to discard tokens until we’re right at the beginning of the
+    next statement. That boundary is pretty easy to spot—it’s one of the
+    main reasons we picked it. After a semicolon, we’re probably finished
+    with a statement. Most statements start with a keyword—for, if, return,
+    var, etc. When the next token is any of those, we’re probably about to
+    start a statement.
+
+    It discards tokens until it thinks it found a statement boundary.
+    After catching a ParseError, we’ll call this and then we are hopefully
+    back in sync. When it works well, we have discarded tokens that would
+    have likely caused cascaded errors anyway and now we can parse the rest
+    of the file starting at the next statement.
+
+    (Used in later chapters, when Statements are introduced).
      */
     private void synchronize() {
         advance();
