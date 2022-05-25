@@ -90,7 +90,7 @@ public class Lox {
             System.out.println(c++ + ": " + token.toStringParserView());
         }
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
+        Expr expression = parser.parseToExpr();
 
         /*
         We’ll use this to ensure we don’t try to execute code that has

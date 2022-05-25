@@ -1,5 +1,6 @@
 package com.raoulsson.lox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.raoulsson.lox.TokenType.*;
@@ -94,9 +95,71 @@ public class Parser {
     }
 
     /*
-    Entry point to the parser
+    This parses a series of statements, as many as it can find until it
+    hits the end of the input. This is a pretty direct translation of
+    the program rule into recursive descent style. We must also chant a
+    minor prayer to the Java Verbosity Gods since we are using ArrayList
+    now.
      */
-    Expr parse() {
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(statement());
+        }
+        return statements;
+    }
+
+    /*
+    A program is a list of statements, and we parse one of those statements
+    using this method.
+
+    A little bare bones, but we’ll fill it in with more statement types later.
+    We determine which specific statement rule is matched by looking at the
+    current token. A print token means it’s obviously a print statement.
+
+    If the next token doesn’t look like any known kind of statement, we assume
+    it must be an expression statement. That’s the typical final fallthrough
+    case when parsing a statement, since it’s hard to proactively recognize
+    an expression from its first token.
+     */
+    private Stmt statement() {
+        if(match(PRINT)) return printStatement();
+        return expressionStatement();
+    }
+
+    /*
+    Since we already matched and consumed the print token itself, we
+    don’t need to do that here. We parse the subsequent expression,
+    consume the terminating semicolon, and emit the syntax tree.
+     */
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    /*
+    If we didn't match a print statement, we must have one of these.
+    Similar to the previous method, we parse an expression followed
+    by a semicolon. We wrap that Expr in a Stmt of the right type and return it.
+     */
+    private Stmt expressionStatement() {
+        Expr expr = expression();
+        consume(SEMICOLON, "Expect ';' after expression.");
+        return new Stmt.Expression(expr);
+    }
+
+    /*
+    Entry point to the parser.
+
+    The parser’s parse() method that parses and returns a single expression
+    was a temporary hack to get the last chapter up and running. Now that
+    our grammar has the correct starting rule, program, we can turn parse()
+    into the real deal.
+
+    We keep it, renamed to parseToExpr
+     */
+    Expr parseToExpr() {
         try {
             // GOTO-11 - A jump back marker to help the reader to navigate the actual code flow.
             Expr expr = expression();

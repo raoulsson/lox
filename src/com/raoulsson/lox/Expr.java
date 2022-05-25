@@ -1,5 +1,7 @@
 package com.raoulsson.lox;
 
+import java.util.List;
+
 // Generated code by com.raoulsson.tools.GenerateAst
 /*
 expression  → literal | unary | binary | grouping ;
@@ -18,14 +20,10 @@ public abstract class Expr {
     */
     interface Visitor<R> {
         R visitBinaryExpr(Binary expr);
-
         R visitGroupingExpr(Grouping expr);
-
         R visitLiteralExpr(Literal expr);
-
         R visitUnaryExpr(Unary expr);
     }
-
     /*
     The Visitor pattern is the most widely misunderstood pattern in all of Design
     Patterns, which is really saying something when you look at the software architecture
