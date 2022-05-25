@@ -10,7 +10,7 @@ import java.util.Locale;
 public class GenerateAst {
 
     public static void main(String[] args) throws IOException {
-        if(args.length != 1) {
+        if (args.length != 1) {
             System.err.println("Usage: generate_ast <output directory>");
             System.exit(64);
         }
@@ -100,7 +100,7 @@ public class GenerateAst {
         writer.println("*/");
         writer.println("    public static class " + className + " extends " + baseName + " {");
         writer.println();
-        for(String field : fields) {
+        for (String field : fields) {
             writer.println("        final " + field + ";");
         }
         writer.println();
