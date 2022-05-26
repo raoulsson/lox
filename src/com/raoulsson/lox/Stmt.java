@@ -79,7 +79,7 @@ public abstract class Stmt {
         */
         @Override
         public String toString() {
-            return new AstPrinter().print(expression);
+            return "EXPRESSION " + new AstPrinter().print(expression);
         }
 
     }
@@ -115,7 +115,7 @@ public abstract class Stmt {
         */
         @Override
         public String toString() {
-            return new AstPrinter().print(expression);
+            return "PRINT " + new AstPrinter().print(expression);
         }
 
     }

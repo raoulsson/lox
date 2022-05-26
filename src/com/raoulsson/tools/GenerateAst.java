@@ -206,7 +206,7 @@ public class GenerateAst {
             writer.println("*/");
             writer.println("    @Override");
             writer.println("    public String toString() {");
-            writer.println("        return new AstPrinter().print(expression);");
+            writer.println("        return \"" + className.toUpperCase() + " \" + new AstPrinter().print(expression);");
             writer.println("    }");
             writer.println();
         }

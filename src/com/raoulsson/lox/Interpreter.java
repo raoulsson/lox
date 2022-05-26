@@ -37,7 +37,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     void interpret(List<Stmt> statements) {
         try {
             for (Stmt statement : statements) {
-                System.out.println(new AstStmtExprPrinter().print(statement));   // Until Chapter 8
+                System.out.print(new AstStmtExprPrinter().print(statement) + " → ");   // Until Chapter 8
                 execute(statement);
             }
         } catch (RuntimeError error) {

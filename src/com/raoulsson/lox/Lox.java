@@ -19,6 +19,7 @@ public class Lox {
      */
     private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    static boolean logDebug = false;
     /*
     This field plays a small but important role.
 
@@ -80,14 +81,18 @@ public class Lox {
     }
 
     private static void run(String source) {
-        System.out.println("Source:\n" + source);
+        if (logDebug) {
+            System.out.println("Source:\n" + source);
+        }
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
 
-        System.out.println("Scanned tokens:");
-        int c = 1;
-        for (Token token : tokens) {
-            System.out.println(c++ + ": " + token.toStringParserView());
+        if (logDebug) {
+            System.out.println("Scanned tokens:");
+            int c = 1;
+            for (Token token : tokens) {
+                System.out.println(c++ + ": " + token.toStringParserView());
+            }
         }
 
         Parser parser = new Parser(tokens);

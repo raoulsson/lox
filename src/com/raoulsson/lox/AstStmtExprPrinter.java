@@ -4,12 +4,12 @@ public class AstStmtExprPrinter implements Stmt.Visitor<String> {
 
     @Override
     public String visitExpressionStmt(Stmt.Expression expr) {
-        return "[" + expr.toString() + "]";
+        return expr.toString();
     }
 
     @Override
     public String visitPrintStmt(Stmt.Print expr) {
-        return "[" + expr.toString() + "]";
+        return expr.toString();
     }
 
     @Override
