@@ -83,18 +83,15 @@ public class Lox {
         System.out.println("Source:\n" + source);
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-        //List<Token> tokens2 = scanner.scanTokens();
-        // print the tokens.
+
         System.out.println("Scanned tokens:");
         int c = 1;
         for (Token token : tokens) {
             System.out.println(c++ + ": " + token.toStringParserView());
         }
-        //Parser parser1 = new Parser(tokens1);
-        //Expr expression = parser1.parseToExpr();   // Until Chapter 8
 
-        Parser parser2 = new Parser(tokens);
-        List<Stmt> statements = parser2.parse();     // As of Chapter 8
+        Parser parser = new Parser(tokens);
+        List<Stmt> statements = parser.parse();     // As of Chapter 8
 
         /*
         We’ll use this to ensure we don’t try to execute code that has
@@ -118,6 +115,41 @@ public class Lox {
          */
         //interpreter.interpretExpr(expression);  // Until Chapter 8
         interpreter.interpret(statements);  // As of Chapter 8
+    }
+
+    private static void runExpression(String source) {
+        System.out.println("Source:\n" + source);
+        Scanner scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanTokens();
+        System.out.println("Scanned tokens:");
+        int c = 1;
+        for (Token token : tokens) {
+            System.out.println(c++ + ": " + token.toStringParserView());
+        }
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parseToExpr();   // Until Chapter 8
+
+        /*
+        We’ll use this to ensure we don’t try to execute code that has
+        a known error. Also, it lets us exit with a non-zero exit code
+        like a good command line citizen should.
+         */
+        if (hadError) {
+            return;
+        }
+
+        System.out.println("AST: " + new AstPrinter().print(expression));   // Until Chapter 8
+
+        /*
+        We have an entire language pipeline now: scanning, parsing, and execution.
+        Congratulations, you now have your very own arithmetic calculator.
+
+        As you can see, the interpreter is pretty bare bones. But the Interpreter
+        class and the visitor pattern we’ve set up today form the skeleton that
+        later chapters will stuff full of interesting guts—variables, functions,
+        etc. Right now, the interpreter doesn’t do very much, but it’s alive!
+         */
+        interpreter.interpretExpr(expression);  // Until Chapter 8
     }
 
     /*

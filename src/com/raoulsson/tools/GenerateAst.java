@@ -41,7 +41,7 @@ public class GenerateAst {
         writer.println("import java.util.List;");
         writer.println();
         writer.println("// Generated code by com.raoulsson.tools.GenerateAst");
-        if(genExpr) {
+        if (genExpr) {
             writer.println("/*");
             writer.println("expression  → literal | unary | binary | grouping ;");
             writer.println("*/");
@@ -76,7 +76,7 @@ public class GenerateAst {
 
         defineVisitor(writer, baseName, types);
 
-        if(genExpr) {
+        if (genExpr) {
             writer.println("/*");
             writer.println("The Visitor pattern is the most widely misunderstood pattern in all of Design \nPatterns, " +
                     "which is really saying something when you look at the software architecture \nexcesses of the past " +
@@ -153,7 +153,7 @@ public class GenerateAst {
         String[] fields = fieldsList.split(", ");
 
         writer.println("/*");
-        if(genExpr) {
+        if (genExpr) {
             writer.println("" + className + " → " + comment);
         }
         if (!genExpr && className.equals("Expression")) {
@@ -189,17 +189,27 @@ public class GenerateAst {
         writer.println("        }");
 
         writer.println();
-        //if(genExpr) {
+        writer.println("/*");
+        writer.println("We have no clue who the visitor is, but we accept him and give ourselves to him.");
+        writer.println("*/");
+        writer.println("        @Override");
+        writer.println("        <R> R accept(Visitor<R> visitor) {");
+        writer.println("            return visitor.visit" + className + baseName + "(this);");
+        writer.println("        }");
+        writer.println();
+        if (!genExpr) {
             writer.println("/*");
-            writer.println("We have no clue who the visitor is, but we accept him and give ourselves to him.");
+            writer.println("Intermediate impl");
             writer.println("*/");
-            writer.println("        @Override");
-            writer.println("        <R> R accept(Visitor<R> visitor) {");
-            writer.println("            return visitor.visit" + className + baseName + "(this);");
-            writer.println("        }");
+            writer.println("    @Override");
+            writer.println("    public String toString() {");
+            writer.println("        return new AstPrinter().print(expression);");
+            writer.println("    }");
             writer.println();
-        //}
+        }
         writer.println("    }");
         writer.println();
+
+
     }
 }
