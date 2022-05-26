@@ -1,7 +1,5 @@
 package com.raoulsson.lox;
 
-import java.util.List;
-
 // Generated code by com.raoulsson.tools.GenerateAst
 /*
 expression  → literal | unary | binary | grouping ;

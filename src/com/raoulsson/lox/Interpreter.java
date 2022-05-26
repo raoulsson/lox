@@ -1,6 +1,5 @@
 package com.raoulsson.lox;
 
-import java.sql.Statement;
 import java.util.List;
 
 /*

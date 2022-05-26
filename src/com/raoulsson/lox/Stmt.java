@@ -1,7 +1,5 @@
 package com.raoulsson.lox;
 
-import java.util.List;
-
 // Generated code by com.raoulsson.tools.GenerateAst
 /*
 The first rule is now program, which is the starting point for

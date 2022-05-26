@@ -42,40 +42,7 @@ While in recursive descent, the rules it is in, is not stored explicitly in fiel
 Instead, we use Java’s own call stack to track what the parser is doing. Each rule
 in the middle of being parsed is a call frame on the stack.
 
-As a walk through example, we use the one from the book, the Lox source being:
-
-    -123 * (45.67)
-
-To run it, feed the file "lox_test_sources/parser_example_from_book_1.lox" to Lox.
-
-First the scanner produces these tokens:
-
-    1: MINUS
-    2: NUMBER 123.0
-    3: STAR
-    4: LEFT_PAREN
-    5: NUMBER 45.67
-    6: RIGHT_PAREN
-    7: EOF
-
-that are then fed into the parser, which produces this syntax tree as output:
-
-   (* (- 123.0) (group 45.67))
-
-In the comments, refer to "STEP n", as we go along to see how the data is used
-and produced.
-The actual values that are produced in the example, are given in comments like
-such:
-
-    return equality();    // 45.67 // (* (- 123.0) (group 45.67))
-
-where 45.67 here would be the first value and so on, as we step along. It is
-not so difficult to understand the code in principle by simply mapping the
-grammar to code and get a feel for it, however, it also helps to go through
-the code with the magnifying glass and see what "recursive descent" actually
-does.
-As another helper, I added comments like "GOTO-N" to the code, so that it
-would be clear where to return to.
+For a walk through example, checkout: https://github.com/raoulsson/lox/blob/b3c83de31e09a47e3a21cdb1284a558da53bd170/src/com/raoulsson/lox/Parser.java
  */
 @SuppressWarnings("UnnecessaryLocalVariable")
 public class Parser {
@@ -105,7 +72,8 @@ public class Parser {
     List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            statements.add(statement());
+            //statements.add(statement());
+            statements.add(declaration());
         }
         return statements;
     }
@@ -140,6 +108,28 @@ public class Parser {
     }
 
     /*
+    As always, the recursive descent code follows the grammar rule.
+    The parser has already matched the var token, so next it requires
+    and consumes an identifier token for the variable name.
+    Then, if it sees an = token, it knows there is an initializer
+    expression and parses it. Otherwise, it leaves the initializer null.
+    Finally, it consumes the required semicolon at the end of the
+    statement. All this gets wrapped in a Stmt.Var syntax tree node
+    and we’re groovy.
+     */
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect variable name.");
+
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after variable declaration");
+        return new Stmt.Var(name, initializer);
+    }
+
+    /*
     If we didn't match a print statement, we must have one of these.
     Similar to the previous method, we parse an expression followed
     by a semicolon. We wrap that Expr in a Stmt of the right type and return it.
@@ -162,14 +152,7 @@ public class Parser {
      */
     Expr parseToExpr() {
         try {
-            // GOTO-11 - A jump back marker to help the reader to navigate the actual code flow.
-            Expr expr = expression();
-            /*
-            STEP 32: We are finally done.
-            TOKEN : EOF
-            Return Binary (* (- 123.0) (group 45.67)) to client
-             */
-            return expr;
+            return expression();
         } catch (ParseError error) {
             return null;
         }
@@ -188,219 +171,112 @@ public class Parser {
     other rule’s method.
      */
     private Expr expression() {
-        /*
-        STEP 1: expression  → equality ;
-        TOKEN : MINUS (technically this happens in match(), but logically true)
-         */
-        /*
-        STEP 14: The token within the brackets is a new expression, so we start from the top
-        TOKEN : NUMBER 45.67
-         */
-        // GOTO-7
-        Expr expr = equality();
-        /*
-        STEP 25:
-        TOKEN : RIGHT_PAREN
-        Return 45.67 to GOTO-8
-         */
-        /*
-        STEP 31:
-        TOKEN : EOF
-        Return Binary (* (- 123.0) (group 45.67)) to GOTO-11
-         */
-        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
+        return equality();
+    }
+
+    /*
+    This declaration() method is the method we call repeatedly
+    when parsing a series of statements in a block or a script,
+    so it’s the right place to synchronize when the parser goes
+    into panic mode. The whole body of this method is wrapped in
+    a try block to catch the exception thrown when the parser
+    begins error recovery. This gets it back to trying to parse
+    the beginning of the next statement or declaration.
+
+    The real parsing happens inside the try block. First, it
+    looks to see if we’re at a variable declaration by looking
+    for the leading var keyword. If not, it falls through to the
+    existing statement() method that parses print and expression
+    statements.
+
+    Remember how statement() tries to parse an expression statement
+    if no other statement matches? And expression() reports a syntax
+    error if it can’t parse an expression at the current token? That
+    chain of calls ensures we report an error if a valid declaration
+    or statement isn’t parsed.
+     */
+    private Stmt declaration() {
+        try {
+            if (match(VAR)) {
+                return varDeclaration();
+            }
+            return statement();
+        } catch (ParseError error) {
+            synchronize();
+            return null;
+        }
     }
 
     /*
         equality → comparison ( ( "!=" | "==" ) comparison )* ;
      */
     private Expr equality() {
-        /*
-        STEP 2: equality → comparison ( ( "!=" | "==" ) comparison )* ;
-        TOKEN : MINUS
-         */
-        /*
-        STEP 15:
-        TOKEN : NUMBER 45.67
-         */
-        // GOTO-6
-        Expr expr = comparison();   // 45.67 // (* (- 123.0) (group 45.67))
+        Expr expr = comparison();
 
-        // ( ... )*
-        while (match(BANG_EQUAL, EQUAL_EQUAL)) { // ( "!=" | "==" )
+        while (match(BANG_EQUAL, EQUAL_EQUAL)) {
             Token operator = previous();
-            Expr right = comparison();  // comparison
+            Expr right = comparison();
             expr = new Expr.Binary(expr, operator, right);
         }
-        /*
-        STEP 24:
-        TOKEN : RIGHT_PAREN
-        Return 45.67 to GOTO-7
-         */
-        /*
-        STEP 30:
-        TOKEN : EOF
-        Return Binary (* (- 123.0) (group 45.67)) to GOTO-7
-         */
-        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
+
+        return expr;
     }
 
     /*
         comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
      */
     private Expr comparison() {
-        /*
-        STEP 3: comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
-        TOKEN : MINUS
-         */
-        /*
-        STEP 16:
-        TOKEN : NUMBER 45.67
-         */
-        // GOTO-5
-        Expr expr = term(); // 45.67 // (* (- 123.0) (group 45.67))
+        Expr expr = term();
 
         while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
             Token operator = previous();
             Expr right = term();
             expr = new Expr.Binary(expr, operator, right);
         }
-        /*
-        STEP 23:
-        TOKEN : RIGHT_PAREN
-        Return 45.67 to GOTO-6
-         */
-        /*
-        STEP 29:
-        TOKEN : EOF
-        Return Binary (* (- 123.0) (group 45.67)) to GOTO-6
-         */
-        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
+
+        return expr;
     }
 
     /*
         term        → factor ( ( "-" | "+" ) factor )* ;
      */
     private Expr term() {
-        /*
-        STEP 4: term        → factor ( ( "-" | "+" ) factor )* ;
-        TOKEN : MINUS
-         */
-        /*
-        STEP 17:
-        TOKEN : NUMBER 45.67
-         */
-        // GOTO-4
-        Expr expr = factor();   // 45.67 // (* (- 123.0) (group 45.67))
+        Expr expr = factor();
 
         while (match(MINUS, PLUS)) {
             Token operator = previous();
             Expr right = factor();
             expr = new Expr.Binary(expr, operator, right);
         }
-        /*
-        STEP 22:
-        TOKEN : RIGHT_PAREN
-        Return 45.67 to GOTO-5
-         */
-        /*
-        STEP 28:
-        TOKEN : EOF
-        Return Binary (* (- 123.0) (group 45.67)) to GOTO-5
-         */
-        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
+
+        return expr;
     }
 
     /*
         factor      → unary ( ( "/" | "*" ) unary )* ;
      */
     private Expr factor() {
-        /*
-        STEP 5: factor      → unary ( ( "/" | "*" ) unary )* ;
-        TOKEN : MINUS
-         */
-        /*
-        STEP 18:
-        TOKEN : NUMBER 45.67
-         */
-        // GOTO-2
-        Expr expr = unary();    // (- 123.0) // 45.67
+        Expr expr = unary();
 
         while (match(SLASH, STAR)) {
-            Token operator = previous();    // *
-            /*
-            STEP 11: We match STAR and enter the while
-            TOKEN : LEFT_PAREN
-            */
-            // GOTO-3
-            Expr right = unary();   // (group 45.67)
-            /*
-            STEP 27:
-                expr = (- 123.0)
-                operator = *
-                right = (group 45.67)
-            TOKEN : EOF
-            Return Binary (* (- 123.0) (group 45.67)) to GOTO-4
-             */
+            Token operator = previous();
+            Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);
         }
-        /*
-        STEP 21:
-        TOKEN : RIGHT_PAREN
-        Return 45.67 to GOTO-4
-         */
-        return expr;    // 45.67 // (* (- 123.0) (group 45.67))
+
+        return expr;
     }
 
     /*
         unary       → ("!"|"-") unary | primary ;
      */
     private Expr unary() {
-        /*
-        STEP 6: Matching in unary
-        TOKEN : MINUS
-         */
-        /*
-        STEP 8: Matching in primary
-        TOKEN : NUMBER 123.0
-         */
         if (match(BANG, MINUS)) {
-            /*
-            STEP 7: We matched with MINUS. match() moves head, previous token is MINUS
-            TOKEN : NUMBER 123.0
-             */
-            Token operator = previous();    // MINUS
-            // GOTO-1
-            Expr right = unary();   // 123.0
-            /*
-            STEP 8.5:
-            TOKEN : STAR
-            Return Unary (- 123.0) to GOTO-1
-            */
-            return new Expr.Unary(operator, right); // (- 123.0)
+            Token operator = previous();
+            Expr right = unary();
+            return new Expr.Unary(operator, right);
         }
-        /*
-        STEP 9:
-        TOKEN : NUMBER 123.0
-        Return 123 to GOTO-1
-         */
-        /*
-        STEP 12: We skip the if and enter primary()
-        TOKEN : LEFT_PAREN
-        Reappearance in STEP 26
-         */
-        /*
-        STEP 19:
-        TOKEN : NUMBER 45.67
-        Return 45.67 to GOTO-2
-         */
-        /*
-        STEP 26:
-        TOKEN : EOF
-        Return (group 45.67) to GOTO-3
-         */
-        // GOTO-9
-        return primary();   // 123.0 // 45.67 // (group 45.67)
+        return primary();
     }
 
     /*
@@ -417,35 +293,15 @@ public class Parser {
             return new Expr.Literal(null);
         }
         if (match(NUMBER, STRING)) {
-            /*
-            STEP 10:
-            TOKEN : STAR
-            Return literal number 123.0 to GOTO-1
-             */
-            /*
-            STEP 20:
-            TOKEN : RIGHT_PAREN
-            Return literal number 45.67 to GOTO-2
-             */
-            return new Expr.Literal(previous().literal);    // 123.0  // 45.67
+            return new Expr.Literal(previous().literal);
+        }
+        if (match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
         }
         if (match(LEFT_PAREN)) {
-            /*
-            STEP 13: primary in parens forwards token to be handled as expression:
-                primary     → ... | "(" expression ")" ;
-            TOKEN : NUMBER 45.67
-             */
-            // GOTO-8
-            Expr expr = expression();   // 45.67
-
+            Expr expr = expression();
             consume(RIGHT_PAREN, "Expect ')' after expression.");
-            /*
-            STEP 26: we consumed RIGHT_PAREN, cause after expression in left parens, right
-            parens must follow.
-            TOKEN : EOF
-            Return (group 45.67) to GOTO-9
-             */
-            return new Expr.Grouping(expr); // (group 45.67)
+            return new Expr.Grouping(expr);
         }
         throw error(peek(), "Expected expression.");
     }
@@ -518,12 +374,12 @@ public class Parser {
     }
 
     /*
-    This is a simple sentinel class we use to unwind the parser. The error()
+    This is a simple sentinel class we use, to unwind the parser. The error()
     method returns it instead of throwing because we want to let the calling
     method inside the parser decide whether to unwind or not. Some parse
     errors occur in places where the parser isn’t likely to get into a weird
-    state and we don’t need to synchronize. In those places, we simply report
-    the error and keep on truckin’.
+    state, and we don’t need to synchronize. In those places, we simply report
+    the error and keep on truckin'.
 
     For example, Lox limits the number of arguments you can pass to a function.
     If you pass too many, the parser needs to report that error, but it can
@@ -561,12 +417,10 @@ public class Parser {
     start a statement.
 
     It discards tokens until it thinks it found a statement boundary.
-    After catching a ParseError, we’ll call this and then we are hopefully
+    After catching a ParseError, we’ll call this, and then we are hopefully
     back in sync. When it works well, we have discarded tokens that would
-    have likely caused cascaded errors anyway and now we can parse the rest
+    have likely caused cascaded errors anyway, and now we can parse the rest
     of the file starting at the next statement.
-
-    (Used in later chapters, when Statements are introduced).
      */
     private void synchronize() {
         advance();
