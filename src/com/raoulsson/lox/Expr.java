@@ -23,6 +23,7 @@ public abstract class Expr {
         R visitGroupingExpr(Grouping expr);
         R visitLiteralExpr(Literal expr);
         R visitUnaryExpr(Unary expr);
+        R visitVariableExpr(Variable expr);
     }
 
     /*
@@ -130,6 +131,27 @@ public abstract class Expr {
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitUnaryExpr(this);
+        }
+
+    }
+
+    /*
+    Variable → "var" IDENTIFIER ( "=" expression )? ";" ;
+    */
+    public static class Variable extends Expr {
+
+        final Token name;
+
+        public Variable(Token name) {
+            this.name = name;
+        }
+
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitVariableExpr(this);
         }
 
     }

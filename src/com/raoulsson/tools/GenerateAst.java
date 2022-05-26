@@ -21,14 +21,16 @@ public class GenerateAst {
                 "Binary     : Expr left, Token operator, Expr right : expression operator expression ;",
                 "Grouping   : Expr expression : \"(\" expression \")\" ; ",
                 "Literal    : Object value : NUMBER | STRING | \"true\" | \"false\" | \"nil\" ;",
-                "Unary      : Token operator, Expr right : (\"-\"|\"!\")expression ;"
+                "Unary      : Token operator, Expr right : (\"-\"|\"!\")expression ;",
+                "Variable   : Token name : \"var\" IDENTIFIER ( \"=\" expression )? \";\" ;"
         ));
 
         genExpr = false;
 
         defineAst(outputDir, "Stmt", Arrays.asList(
                 "Expression : Expr expression : <comment>",
-                "Print      : Expr expression : <comment>"
+                "Print      : Expr expression : <comment>",
+                "Var        : Token name, Expr initializer : <comment>"
         ));
     }
 
@@ -55,6 +57,7 @@ public class GenerateAst {
             writer.println("tokens at the end of a script.");
             writer.println();
             writer.println("program     → statement* EOF ;");
+            writer.println("declaration → varDecl | statement ;");
             writer.println("statement   → exprStmt | printStmt ;");
             writer.println("exprStmt    → expression \";\" ;");
             writer.println("printStmt   → \"print\" expression \";\" ;");
@@ -197,7 +200,7 @@ public class GenerateAst {
         writer.println("            return visitor.visit" + className + baseName + "(this);");
         writer.println("        }");
         writer.println();
-        if (!genExpr) {
+        if (!genExpr && (className.equals("Expression") || className.equals("Print"))) {
             writer.println("/*");
             writer.println("Intermediate impl");
             writer.println("*/");

@@ -20,7 +20,8 @@ comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        → factor ( ( "-" | "+" ) factor )* ;
 factor      → unary ( ( "/" | "*" ) unary )* ;
 unary       → ("!"|"-") unary | primary ;
-primary     → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" ;
+Variable    → "var" IDENTIFIER ( "=" expression )? ";" ;
+primary     → NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")" | IDENTIFIER ;
 
 A recursive descent parser is a literal translation of the grammar’s rules straight
 into imperative code. Each rule becomes a function. The body of the rule translates

@@ -1,5 +1,7 @@
 package com.raoulsson.lox;
 
+import java.util.List;
+
 // Generated code by com.raoulsson.tools.GenerateAst
 /*
 The first rule is now program, which is the starting point for
@@ -10,6 +12,7 @@ the entire input and doesn’t silently ignore erroneous unconsumed
 tokens at the end of a script.
 
 program     → statement* EOF ;
+declaration → varDecl | statement ;
 statement   → exprStmt | printStmt ;
 exprStmt    → expression ";" ;
 printStmt   → "print" expression ";" ;
@@ -28,10 +31,6 @@ variables or other named entities.
 public abstract class Stmt {
 
     /*
-     */
-    abstract <R> R accept(Visitor<R> visitor);
-
-    /*
     Any class that needs to operate on the Stmt data, can implement the Visitor<R>
     interface. Currently: Interpreter
 
@@ -43,9 +42,13 @@ public abstract class Stmt {
     */
     interface Visitor<R> {
         R visitExpressionStmt(Expression stmt);
-
         R visitPrintStmt(Print stmt);
+        R visitVarStmt(Var stmt);
     }
+
+    /*
+     */
+    abstract <R> R accept(Visitor<R> visitor);
 
     /*
     An expression statement lets you place an expression where a
@@ -113,6 +116,28 @@ public abstract class Stmt {
         @Override
         public String toString() {
             return new AstPrinter().print(expression);
+        }
+
+    }
+
+    /*
+     */
+    public static class Var extends Stmt {
+
+        final Token name;
+        final Expr initializer;
+
+        public Var(Token name, Expr initializer) {
+            this.name = name;
+            this.initializer = initializer;
+        }
+
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitVarStmt(this);
         }
 
     }

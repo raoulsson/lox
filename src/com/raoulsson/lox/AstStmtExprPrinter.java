@@ -12,6 +12,11 @@ public class AstStmtExprPrinter implements Stmt.Visitor<String> {
         return "[" + expr.toString() + "]";
     }
 
+    @Override
+    public String visitVarStmt(Stmt.Var stmt) {
+        return null;
+    }
+
     public String print(Stmt stmt) {
         return stmt.accept(this);
     }
