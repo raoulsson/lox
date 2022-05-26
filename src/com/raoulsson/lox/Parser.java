@@ -14,7 +14,8 @@ This matches the same syntax as the previous rule, but better mirrors the code w
 write to parse Lox. We use the same structure for all of the other binary operator
 precedence levels, giving us this complete expression grammar:
 
-expression  → equality ;
+expression  → assignment ;
+assignment  → IDENTIFIER "=" assignment | equality ;
 equality    → comparison ( ( "!=" | "==" ) comparison )* ;
 comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )* ;
 term        → factor ( ( "-" | "+" ) factor )* ;
@@ -171,7 +172,97 @@ public class Parser {
     other rule’s method.
      */
     private Expr expression() {
-        return equality();
+        //return equality();
+        return assignment();
+    }
+
+    /*
+    Here is where it gets tricky. A single token lookahead recursive
+    descent parser can’t see far enough to tell that it’s parsing an
+    assignment until after it has gone through the left-hand side and
+    stumbled onto the =. You might wonder why it even needs to. After
+    all, we don’t know we’re parsing a + expression until after we’ve
+    §finished parsing the left operand.
+
+    The difference is that the left-hand side of an assignment isn’t an
+    expression that evaluates to a value. It’s a sort of pseudo-expression
+    that evaluates to a “thing” you can assign to. In:
+
+        var a = "before";
+        a = "value";
+
+    On the second line, we don’t evaluate a (which would return the string
+    “before”). We figure out what variable a refers to, so we know where
+    to store the right- hand side expression’s value. The classic terms
+    for these two constructs are l- value and r-value. All of the expressions
+    that we’ve seen so far that produce values are r-values. An l-value
+    “evaluates” to a storage location that you can assign into.
+    We want the syntax tree to reflect that an l-value isn’t evaluated like a
+    normal expression. That’s why the Expr.Assign node has a Token for the
+    left-hand side, not an Expr. The problem is that the parser doesn’t know
+    it’s parsing an l-value until it hits the =. In a complex l-value, that
+    may occur many tokens later:
+
+        makeList().head.next = node;
+
+    We only have a single token of lookahead, so what do we do? We use a little
+    trick, and it looks like so (see implementation below).
+
+    Most of the code for parsing an assignment expression looks similar to the
+    other binary operators like +. We parse the left-hand side, which can be any
+    expression of higher precedence. If we find an =, we parse the right-hand
+    side and then wrap it all up in an assignment expression tree node.
+
+    One slight difference from binary operators is that we don’t loop to build up
+    a sequence of the same operator. Since assignment is right-associative, we
+    instead recursively call assignment() to parse the right-hand side.
+
+    The trick is that right before we create the assignment expression node, we
+    look at the left-hand side expression and figure out what kind of assignment
+    target it is. We convert the r-value expression node into an l-value
+    representation.
+
+    This trick works because it turns out that every valid assignment target
+    happens to also be valid syntax as a normal expression. Consider a complex
+    field assignment like:
+
+        newPoint(x + 2, 0).y = 3;
+
+    The left-hand side of that assignment could also work as a valid expression:
+
+        newPoint(x + 2, 0).y;
+
+    (Where the first example sets the field, the second gets it.)
+
+    This means we can parse the left-hand side as if it were an expression and
+    then after the fact produce a syntax tree that turns it into an assignment
+    target. If the left-hand side expression isn’t a valid assignment target,
+    we fail with a syntax error. That ensures we report an error on code like:
+
+        a + b = c;
+
+    Right now, the only valid target is a simple variable expression, but we’ll
+    add fields later. The end result of this trick is an assignment expression
+    tree node that knows what it is assigning to and has an expression subtree
+    for the value being assigned. All with only a single token of lookahead and
+    no backtracking.
+     */
+    private Expr assignment() {
+        Expr expr = equality();
+
+        if (match(EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable)expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
     }
 
     /*

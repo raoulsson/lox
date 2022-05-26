@@ -1,5 +1,7 @@
 package com.raoulsson.lox;
 
+import java.util.List;
+
 // Generated code by com.raoulsson.tools.GenerateAst
 /*
 expression  → literal | unary | binary | grouping ;
@@ -17,6 +19,7 @@ public abstract class Expr {
     and do the dispatching within this method (Binary, Grouping, ...)
     */
     interface Visitor<R> {
+        R visitAssignExpr(Assign expr);
         R visitBinaryExpr(Binary expr);
         R visitGroupingExpr(Grouping expr);
         R visitLiteralExpr(Literal expr);
@@ -42,6 +45,29 @@ public abstract class Expr {
     They pass themselves to the visitor and return it's return value of type R.
     */
     abstract <R> R accept(Visitor<R> visitor);
+
+    /*
+    Assign → IDENTIFIER "=" assignment | equality ;
+    */
+    public static class Assign extends Expr {
+
+        final Token name;
+        final Expr value;
+
+        public Assign(Token name, Expr value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitAssignExpr(this);
+        }
+
+    }
 
     /*
     Binary → expression operator expression ;

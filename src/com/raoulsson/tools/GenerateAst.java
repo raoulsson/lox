@@ -18,6 +18,7 @@ public class GenerateAst {
         }
         String outputDir = args[0];
         defineAst(outputDir, "Expr", Arrays.asList(
+                "Assign     : Token name, Expr value : IDENTIFIER \"=\" assignment | equality ;",
                 "Binary     : Expr left, Token operator, Expr right : expression operator expression ;",
                 "Grouping   : Expr expression : \"(\" expression \")\" ; ",
                 "Literal    : Object value : NUMBER | STRING | \"true\" | \"false\" | \"nil\" ;",

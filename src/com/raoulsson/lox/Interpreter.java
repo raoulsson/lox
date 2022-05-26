@@ -29,6 +29,7 @@ Unlike expressions, statements produce no values, so the return
 type of the visit methods is Void, not Object.
  */
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    private Environment environment = new Environment();
 
     /*
     The (new) entry point to Interpreter.
@@ -169,21 +170,59 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    /*
+    This simply forwards to the environment which does the heavy
+    lifting to make sure the variable is defined. With that, we’ve
+    got rudimentary variables working. Try this out:
+
+        var a = 1;
+        var b = 2;
+        print a + b;
+
+    We can’t reuse code yet, but we can start to build up programs
+    that reuse data.
+     */
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        return null;
+        return environment.get(expr.name);
     }
 
     /*
-    The last expression tree class, binary operators.
+    For obvious reasons, it’s similar to variable declaration.
+    It evaluates the right- hand side to get the value, then
+    stores it in the named variable. Instead of using define()
+    on Environment, it calls assign().
 
-    The + operator can also be used to concatenate two
-    strings. To handle that, we don’t just assume the
-    operands are a certain type and cast them, we
-    dynamically check the type and choose the appropriate
-    operation. This is why we need our object representation
-    to support instanceof.
+    The last thing the visit() method does is return the assigned
+    value. That’s because assignment is an expression that can be
+    nested inside other expressions, like so:
+
+        var a = 1;
+        print a = 2; // "2".
+
+    Our interpreter can now create, read, and modify variables. It’s
+    about as sophisticated as early BASICs. Global variables are simple,
+    but writing a large program when any two chunks of code can
+    accidentally step on each other’s state is no fun. We want local
+    variables, which means it’s time for scope.
      */
+    @Override
+    public Object visitAssignExpr(Expr.Assign expr) {
+        Object value = evaluate(expr.value);
+        environment.assign(expr.name, value);
+        return value;
+    }
+
+    /*
+        The last expression tree class, binary operators.
+
+        The + operator can also be used to concatenate two
+        strings. To handle that, we don’t just assume the
+        operands are a certain type and cast them, we
+        dynamically check the type and choose the appropriate
+        operation. This is why we need our object representation
+        to support instanceof.
+         */
     @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
         Object left = evaluate(expr.left);
@@ -319,8 +358,35 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    /*
+    If the variable has an initializer, we evaluate it. If not,
+    we have another choice to make. We could have made this a
+    syntax error in the parser by requiring an initializer.
+    Most languages don’t, though, so it feels a little harsh to
+    do so in Lox.
+
+    We could make it a runtime error. We’d let you define an
+    uninitialized variable, but if you accessed before assigning
+    to it, a runtime error would occur. It’s not a bad idea, but
+    most dynamically typed languages don’t do that. Instead, we’ll
+    keep it simple and say that Lox sets a variable to nil if it
+    isn’t explicitly initialized.
+
+        var a;
+        print a; // "nil".
+
+    Thus, if there isn’t an initializer, we set the value to null,
+    which is the Java representation of Lox’s nil value. Then we
+    tell the environment to bind the variable to that value.
+     */
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null) {
+            value = evaluate(stmt.initializer);
+        }
+
+        environment.define(stmt.name.lexeme, value);
         return null;
     }
 }
