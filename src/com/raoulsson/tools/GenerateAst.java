@@ -29,6 +29,7 @@ public class GenerateAst {
         genExpr = false;
 
         defineAst(outputDir, "Stmt", Arrays.asList(
+                "Block      : List<Stmt> statements : <comment>",
                 "Expression : Expr expression : <comment>",
                 "Print      : Expr expression : <comment>",
                 "Var        : Token name, Expr initializer : <comment>"
@@ -59,7 +60,8 @@ public class GenerateAst {
             writer.println();
             writer.println("program     → statement* EOF ;");
             writer.println("declaration → varDecl | statement ;");
-            writer.println("statement   → exprStmt | printStmt ;");
+            writer.println("statement   → exprStmt | printStmt | block;");
+            writer.println("block       → \"{\" declaration* \"}\" ;");
             writer.println("exprStmt    → expression \";\" ;");
             writer.println("printStmt   → \"print\" expression \";\" ;");
             writer.println();

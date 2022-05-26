@@ -1,5 +1,7 @@
 package com.raoulsson.lox;
 
+import java.util.List;
+
 // Generated code by com.raoulsson.tools.GenerateAst
 /*
 The first rule is now program, which is the starting point for
@@ -11,7 +13,8 @@ tokens at the end of a script.
 
 program     → statement* EOF ;
 declaration → varDecl | statement ;
-statement   → exprStmt | printStmt ;
+statement   → exprStmt | printStmt | block;
+block       → "{" declaration* "}" ;
 exprStmt    → expression ";" ;
 printStmt   → "print" expression ";" ;
 
@@ -39,6 +42,7 @@ public abstract class Stmt {
     and do the dispatching within this method (ExpressionStatement, PrintStatement, ...)
     */
     interface Visitor<R> {
+        R visitBlockStmt(Block stmt);
         R visitExpressionStmt(Expression stmt);
         R visitPrintStmt(Print stmt);
         R visitVarStmt(Var stmt);
@@ -47,6 +51,26 @@ public abstract class Stmt {
     /*
      */
     abstract <R> R accept(Visitor<R> visitor);
+
+    /*
+     */
+    public static class Block extends Stmt {
+
+        final List<Stmt> statements;
+
+        public Block(List<Stmt> statements) {
+            this.statements = statements;
+        }
+
+        /*
+        We have no clue who the visitor is, but we accept him and give ourselves to him.
+        */
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitBlockStmt(this);
+        }
+
+    }
 
     /*
     An expression statement lets you place an expression where a

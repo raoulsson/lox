@@ -17,7 +17,23 @@ the raw string ensures all of those tokens refer to the same map
 key.
  */
 public class Environment {
+    /*
+    We chain the environments together. Each environment has a
+    reference to the environment of the immediately enclosing scope.
+    When we look up a variable, we walk that chain from innermost
+    out until we find the variable. Starting at the inner scope is
+    how we make local variables shadow outer ones.
+     */
+    final Environment enclosing;
     private final Map<String, Object> values = new HashMap<>();
+
+    Environment() {
+        this.enclosing = null;
+    }
+
+    Environment(Environment enclosing) {
+        this.enclosing = enclosing;
+    }
 
     /*
     Binds a new name to a value.
@@ -69,6 +85,9 @@ public class Environment {
         if (values.containsKey(name.lexeme)) {
             return values.get(name.lexeme);
         }
+        if (enclosing != null) {
+            return enclosing.get(name);
+        }
         throw new RuntimeError(name, "Undefined variable '" + name.lexeme + "'.");
     }
 
@@ -81,6 +100,11 @@ public class Environment {
     void assign(Token name, Object value) {
         if (values.containsKey(name.lexeme)) {
             values.put(name.lexeme, value);
+            return;
+        }
+
+        if (enclosing != null) {
+            enclosing.assign(name, value);
             return;
         }
 

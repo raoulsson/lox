@@ -45,7 +45,6 @@ in the middle of being parsed is a call frame on the stack.
 
 For a walk through example, checkout: https://github.com/raoulsson/lox/blob/b3c83de31e09a47e3a21cdb1284a558da53bd170/src/com/raoulsson/lox/Parser.java
  */
-@SuppressWarnings("UnnecessaryLocalVariable")
 public class Parser {
     /*
     Like the scanner, the parser consumes a flat input sequence,
@@ -94,7 +93,33 @@ public class Parser {
      */
     private Stmt statement() {
         if(match(PRINT)) return printStatement();
+        if(match(LEFT_BRACE)) return new Stmt.Block(block());
         return expressionStatement();
+    }
+
+    /*
+    Now that Environments nest, we’re ready to add blocks to the language.
+    A block is a (possibly empty) series of statements or declarations
+    surrounded by curly braces. A block is itself a statement and can appear
+    anywhere a statement is allowed.
+
+    It contains the list of statements that are inside the block. Parsing
+    is straightforward. Like other statements, we detect the beginning of
+    a block by its leading token—in this case the {.
+
+    We create an empty list and then parse statements and add them to the
+    list until we reach the end of the block, marked by the closing }.
+    Note that the loop also has an explicit check for isAtEnd(). We have
+    to be careful to avoid infinite loops, even when parsing invalid code.
+    If the user forgot a closing }, the parser needs to not get stuck.
+     */
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+        consume(RIGHT_BRACE, "Expect '}' after block.");
+        return statements;
     }
 
     /*

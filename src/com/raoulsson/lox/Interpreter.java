@@ -334,11 +334,48 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         throw new RuntimeError(operator, "Operands must be numbers.");
     }
 
+    @Override
+    public Void visitBlockStmt(Stmt.Block stmt) {
+        executeBlock(stmt.statements, new Environment(environment));
+        return null;
+    }
+
     /*
-    We evaluate the inner expression using our existing evaluate() method and
-    discard the value. Then we return null. Java requires that to satisfy the
-    special capitalized Void return type. Weird, but what can you do?
+    To execute a block, we create a new environment for the block’s scope
+    and pass it off to this other method.
+
+    This new method executes a list of statements in the context of a
+    given environment. Up until now, the environment field in Interpreter
+    always pointed to the same environment—the global one. Now, that field
+    represents the current environment. That’s the environment that
+    corresponds to the innermost scope containing the code to be executed.
+
+    To execute code within a given scope, this method updates the interpreter’s
+    environment field, visits all of the statements, and then restores the
+    previous value. As is always good practice in Java, it restores the previous
+    environment using a finally clause. That way it gets restored even if an
+    exception is thrown.
+
+    Surprisingly, that’s all we need to do in order to fully support local
+    variables, nesting, and shadowing.
      */
+    private void executeBlock(List<Stmt> statements, Environment environment) {
+        Environment previous = this.environment;
+        try {
+            this.environment = environment;
+            for (Stmt statement : statements) {
+                execute(statement);
+            }
+        } finally {
+            this.environment = previous;
+        }
+    }
+
+    /*
+        We evaluate the inner expression using our existing evaluate() method and
+        discard the value. Then we return null. Java requires that to satisfy the
+        special capitalized Void return type. Weird, but what can you do?
+         */
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);

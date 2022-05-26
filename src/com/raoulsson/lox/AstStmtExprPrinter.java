@@ -3,6 +3,11 @@ package com.raoulsson.lox;
 public class AstStmtExprPrinter implements Stmt.Visitor<String> {
 
     @Override
+    public String visitBlockStmt(Stmt.Block stmt) {
+        return null;
+    }
+
+    @Override
     public String visitExpressionStmt(Stmt.Expression expr) {
         return expr.toString();
     }
